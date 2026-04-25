@@ -1,0 +1,102 @@
+# =============================================================================
+# .gitignore — Projetos FPGA (Quartus Prime / DE10-Lite)
+# Disciplina: Lógica Reconfigurável (LRCO7A) — UTFPR Apucarana
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Quartus Prime — artefatos de compilação e bases intermediárias
+# -----------------------------------------------------------------------------
+**/db/
+**/incremental_db/
+**/output_files/
+**/greybox_tmp/
+**/simulation/
+**/.qsys_edit/
+**/qdb/
+
+# Workspace pessoal do Quartus (estado de UI, não é fonte)
+*.qws
+
+# Relatórios e logs gerados
+*.rpt
+*.summary
+*.smsg
+*.pin
+*.done
+*.jdi
+*.sld
+*.sof
+*.pof
+*.jam
+*.jbc
+*.ekm
+*.svf
+*.cdf
+*.qarlog
+
+# Backup do editor Quartus
+*.vhd.bak
+*.v.bak
+*.sv.bak
+*.qsf.bak
+*.qpf.bak
+
+# -----------------------------------------------------------------------------
+# Simulação (ModelSim / Questa / GHDL)
+# -----------------------------------------------------------------------------
+work/
+work-obj*.cf
+transcript
+vsim.wlf
+*.vstf
+modelsim.ini
+*.mti
+wlft*
+
+# Waveforms (manter apenas se forem entregáveis)
+*.vcd
+*.gtkw
+*.ghw
+
+# -----------------------------------------------------------------------------
+# LaTeX (relatórios)
+# -----------------------------------------------------------------------------
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.lb
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+*.synctex.gz
+*.fdb_latexmk
+*.figlist
+*.makefile
+
+# -----------------------------------------------------------------------------
+# CD/SDK do fabricante (não redistribuir — é IP da Terasic/Intel)
+# -----------------------------------------------------------------------------
+DE10-Lite_v.2.2.0_SystemCD/
+
+# -----------------------------------------------------------------------------
+# Sistema operacional / editores
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Diretório local do Claude Code (configurações da máquina)
+.claude/
