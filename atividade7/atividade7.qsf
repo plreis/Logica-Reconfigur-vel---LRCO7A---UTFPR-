@@ -1,0 +1,87 @@
+# Projeto Quartus - Atividade 7
+# Placa: Terasic DE10-Lite (MAX 10 10M50DAF484C7G)
+# Pinagem baseada no DE10_LITE_Golden_Top.qsf oficial do SystemCD da Terasic.
+
+set_global_assignment -name FAMILY "MAX 10 FPGA"
+set_global_assignment -name DEVICE 10M50DAF484C7G
+set_global_assignment -name TOP_LEVEL_ENTITY atividade_7
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+
+set_global_assignment -name VHDL_FILE atividade_7.vhd
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+# Clock 50 MHz (MAX10_CLK1_50)
+set_location_assignment PIN_P11 -to clk
+
+# Botoes KEY0/KEY1, ativos em nivel baixo
+set_location_assignment PIN_B8 -to rst_n
+set_location_assignment PIN_A7 -to pause_n
+
+# Chave SW0
+set_location_assignment PIN_C10 -to time_sel
+
+# LEDR0
+set_location_assignment PIN_A8 -to led_end
+
+# Displays de 7 segmentos, bits 6..0 = g f e d c b a, ativos em 0
+set_location_assignment PIN_C14 -to hex0[0]
+set_location_assignment PIN_E15 -to hex0[1]
+set_location_assignment PIN_C15 -to hex0[2]
+set_location_assignment PIN_C16 -to hex0[3]
+set_location_assignment PIN_E16 -to hex0[4]
+set_location_assignment PIN_D17 -to hex0[5]
+set_location_assignment PIN_C17 -to hex0[6]
+
+set_location_assignment PIN_C18 -to hex1[0]
+set_location_assignment PIN_D18 -to hex1[1]
+set_location_assignment PIN_E18 -to hex1[2]
+set_location_assignment PIN_B16 -to hex1[3]
+set_location_assignment PIN_A17 -to hex1[4]
+set_location_assignment PIN_A18 -to hex1[5]
+set_location_assignment PIN_B17 -to hex1[6]
+
+set_location_assignment PIN_B20 -to hex2[0]
+set_location_assignment PIN_A20 -to hex2[1]
+set_location_assignment PIN_B19 -to hex2[2]
+set_location_assignment PIN_A21 -to hex2[3]
+set_location_assignment PIN_B21 -to hex2[4]
+set_location_assignment PIN_C22 -to hex2[5]
+set_location_assignment PIN_B22 -to hex2[6]
+
+set_location_assignment PIN_F21 -to hex3[0]
+set_location_assignment PIN_E22 -to hex3[1]
+set_location_assignment PIN_E21 -to hex3[2]
+set_location_assignment PIN_C19 -to hex3[3]
+set_location_assignment PIN_C20 -to hex3[4]
+set_location_assignment PIN_D19 -to hex3[5]
+set_location_assignment PIN_E17 -to hex3[6]
+
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to rst_n
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to pause_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to time_sel
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_end
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hex0[*]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hex1[*]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hex2[*]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hex3[*]
+
+
+set_global_assignment -name LAST_QUARTUS_VERSION "25.1std.0 Lite Edition"
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name EDA_SIMULATION_TOOL "Questa Altera FPGA (VHDL)"
+set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_timing
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_symbol
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_signal_integrity
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_boundary_scan
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -1,0 +1,300 @@
+%%% Relatorio Tecnico - Atividade 7 - UTFPR
+%%% Timer regressivo em VHDL
+
+\documentclass[12pt,a4paper, brazil]{article}
+
+%%%%%%% INFORMACOES DO CABECALHO
+\newcommand{\workingDate}{\textsc{\selectlanguage{portuguese}\today}}
+\newcommand{\userName}{LRCO7A}
+\newcommand{\institution}{UTFPR-AP}
+\usepackage{researchdiary_png}
+
+\usepackage{listings}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{booktabs}
+
+\lstdefinestyle{vhdl}{
+    language=VHDL,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    frame=single,
+    breaklines=true,
+    captionpos=b,
+    tabsize=2,
+    inputencoding=utf8,
+    extendedchars=true,
+    literate=
+        {á}{{\'a}}1 {à}{{\`a}}1 {â}{{\^a}}1 {ã}{{\~a}}1
+        {é}{{\'e}}1 {ê}{{\^e}}1
+        {í}{{\'i}}1
+        {ó}{{\'o}}1 {ô}{{\^o}}1 {õ}{{\~o}}1
+        {ú}{{\'u}}1
+        {ç}{{\c{c}}}1
+        {Á}{{\'A}}1 {À}{{\`A}}1 {Â}{{\^A}}1 {Ã}{{\~A}}1
+        {É}{{\'E}}1 {Ê}{{\^E}}1
+        {Í}{{\'I}}1
+        {Ó}{{\'O}}1 {Ô}{{\^O}}1 {Õ}{{\~O}}1
+        {Ú}{{\'U}}1
+        {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\begin{center}
+{\textbf {\huge Atividade Prática 7 -- Timer Regressivo}}\\[5mm]
+{\large Pedro Lucas dos Reis Silva - RA: 2272040} \\[5mm]
+{\large Lucas dos Reis Viana - RA: 2321645} \\[5mm]
+\today\\[5mm]
+\end{center}
+
+% ============================================================
+\section{Introdução}
+% ============================================================
+
+Esta atividade consiste na implementação, em VHDL, de um timer regressivo para a placa DE10-Lite. O circuito apresenta o tempo em quatro displays de 7 segmentos, realiza a contagem até zero e acende um LED quando a contagem termina.
+
+Os conceitos novos utilizados foram:
+
+\begin{itemize}
+    \item \textbf{divisão de frequência}: uso do clock de 50 MHz da placa para gerar uma base interna de 1 segundo;
+    \item \textbf{BCD}: representação decimal em grupos de 4 bits para alimentar os displays;
+    \item \textbf{algoritmo \textit{double dabble}}: conversão de valor binário para BCD por deslocamento e soma de 3;
+    \item \textbf{funções}: subprogramas usados para converter binário para BCD e BCD para 7 segmentos;
+    \item \textbf{processo sequencial}: controle da contagem, reset assíncrono e pausa por botão.
+\end{itemize}
+
+% ============================================================
+\section{Desenvolvimento}
+% ============================================================
+
+\subsection{Arquivos do Projeto}
+
+O projeto foi organizado nos seguintes arquivos principais:
+
+\begin{itemize}
+    \item \texttt{atividade\_7.vhd}: contém a entidade principal e toda a lógica do timer;
+    \item \texttt{atividade7.qpf}: arquivo do projeto Quartus;
+    \item \texttt{atividade7.qsf}: define a entidade de topo, o arquivo VHDL usado e a pinagem da DE10-Lite.
+\end{itemize}
+
+A entidade principal é \texttt{atividade\_7}. Ela recebe o clock da placa, dois botões e uma chave de seleção, e gera como saídas um LED de fim de contagem e quatro displays de 7 segmentos.
+
+\subsection{Entradas e Saídas}
+
+As entradas e saídas externas da entidade são:
+
+\begin{itemize}
+    \item \texttt{clk}: clock de 50 MHz da DE10-Lite;
+    \item \texttt{rst\_n}: reset assíncrono ativo em nível baixo, ligado ao botão \texttt{KEY0};
+    \item \texttt{pause\_n}: pausa da contagem, ligada ao botão \texttt{KEY1};
+    \item \texttt{time\_sel}: seleção do tempo inicial, ligada à chave \texttt{SW0};
+    \item \texttt{led\_end}: indicação de fim de contagem, ligada ao \texttt{LEDR0};
+    \item \texttt{hex0}, \texttt{hex1}, \texttt{hex2} e \texttt{hex3}: displays de 7 segmentos usados para apresentar o tempo em segundos.
+\end{itemize}
+
+A chave \texttt{time\_sel} seleciona o valor inicial da contagem. Quando vale 0, o timer inicia em 15 segundos. Quando vale 1, o timer inicia em 60 segundos.
+
+\subsection{Funcionamento Lógico}
+
+O sinal \texttt{second\_counter} conta os ciclos do clock de 50 MHz. Como um segundo corresponde a 50.000.000 ciclos, o contador percorre o intervalo de 0 a 49.999.999. Ao atingir esse valor, ele retorna a zero e o sinal \texttt{current\_time} é decrementado.
+
+O reset é assíncrono e coloca o circuito em um estado inicial conhecido. Após a liberação do reset, o sinal \texttt{reload\_pending} carrega o tempo inicial de acordo com \texttt{time\_sel}. A pausa é feita pelo botão \texttt{KEY1}: enquanto \texttt{pause\_n} estiver em nível baixo, a contagem permanece no mesmo valor.
+
+O valor inteiro de \texttt{current\_time} é convertido para BCD pela função \texttt{bin\_to\_bcd}. Em seguida, cada dígito BCD é convertido para o padrão dos displays pela função \texttt{bcd\_to\_ssd}. Os displays da DE10-Lite são ativos em nível baixo, portanto os segmentos são acesos com bit 0. Quando \texttt{current\_time} chega a zero, o LED \texttt{led\_end} é acionado.
+
+\subsection{Implementação na Placa DE10-Lite}
+
+Na implementação física, o timer utiliza o clock de 50 MHz da placa, os botões \texttt{KEY0} e \texttt{KEY1}, a chave \texttt{SW0}, o LED \texttt{LEDR0} e os quatro displays de 7 segmentos. A Tabela~\ref{tab:pinagem} resume as atribuições definidas no arquivo \texttt{atividade7.qsf}.
+
+\begin{table}[H]
+\centering
+\caption{Pinagem principal do timer regressivo na placa DE10-Lite.}
+\label{tab:pinagem}
+\small
+\begin{tabular}{@{}lll p{5.8cm}@{}}
+\toprule
+\textbf{Recurso} & \textbf{Sinal VHDL} & \textbf{Função} & \textbf{Pino(s)} \\
+\midrule
+\texttt{MAX10\_CLK1\_50} & \texttt{clk}      & clock de 50 MHz       & \texttt{PIN\_P11} \\
+\texttt{KEY0}            & \texttt{rst\_n}   & reset assíncrono      & \texttt{PIN\_B8}  \\
+\texttt{KEY1}            & \texttt{pause\_n} & pausa da contagem     & \texttt{PIN\_A7}  \\
+\texttt{SW0}             & \texttt{time\_sel}& seleção de 15 ou 60 s & \texttt{PIN\_C10} \\
+\texttt{LEDR0}           & \texttt{led\_end} & fim da contagem       & \texttt{PIN\_A8}  \\
+\texttt{HEX0}            & \texttt{hex0}     & unidades              & \texttt{C14, E15, C15, C16, E16, D17, C17} \\
+\texttt{HEX1}            & \texttt{hex1}     & dezenas               & \texttt{C18, D18, E18, B16, A17, A18, B17} \\
+\texttt{HEX2}            & \texttt{hex2}     & centenas              & \texttt{B20, A20, B19, A21, B21, C22, B22} \\
+\texttt{HEX3}            & \texttt{hex3}     & milhares              & \texttt{F21, E22, E21, C19, C20, D19, E17} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+
+% ============================================================
+\section{Simulação}
+% ============================================================
+
+A simulação gate-level verifica o circuito sintetizado para a FPGA MAX 10. A forma de onda apresenta o reset, a seleção dos tempos iniciais de 15 e 60 segundos, o sinal de pausa e as saídas dos quatro displays. Os códigos ativos em nível baixo dos displays correspondem aos valores selecionados, enquanto \texttt{led\_end} permanece desativado durante os testes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{simulacao.png}
+    \caption{Simulação gate-level do timer regressivo com reset, pausa e seleção do tempo inicial.}
+    \label{fig:simulacao}
+\end{figure}
+\FloatBarrier
+
+% ============================================================
+\section{Diagrama RTL}
+% ============================================================
+
+O diagrama RTL gerado pelo Quartus Prime representa a entidade \texttt{atividade\_7} e os blocos lógicos inferidos a partir do código VHDL. A estrutura sintetizada contém o contador usado para a base de 1 segundo, o registrador do tempo atual, a lógica de controle de reset e pausa, a conversão para BCD e os decodificadores dos quatro displays de 7 segmentos.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{rtl.png}
+    \caption{Diagrama RTL do timer regressivo implementado em VHDL.}
+    \label{fig:rtl}
+\end{figure}
+\FloatBarrier
+
+% ============================================================
+\section{Considerações Finais}
+% ============================================================
+
+A atividade permitiu implementar um sistema sequencial completo em VHDL, combinando controle por botões, seleção por chave, divisão de frequência e apresentação em displays de 7 segmentos. O uso de funções separa a conversão para BCD e a decodificação dos displays, tornando o código mais organizado. O timer atende aos requisitos propostos: reset assíncrono, pausa, duas opções de tempo inicial, contagem regressiva até zero e indicação visual do fim da contagem.
+
+% ============================================================
+\appendix
+% ============================================================
+
+\newpage
+\section{Código VHDL -- Entidade \texttt{atividade\_7}}
+\label{ap:codigo-top}
+
+\begin{lstlisting}[style=vhdl, caption={Arquivo \texttt{atividade\_7.vhd}.}]
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity atividade_7 is
+    port (
+        clk      : in  std_logic;
+        rst_n    : in  std_logic;
+        pause_n  : in  std_logic;
+        time_sel : in  std_logic;
+        led_end  : out std_logic;
+        hex0     : out std_logic_vector(6 downto 0);
+        hex1     : out std_logic_vector(6 downto 0);
+        hex2     : out std_logic_vector(6 downto 0);
+        hex3     : out std_logic_vector(6 downto 0)
+    );
+end entity atividade_7;
+
+architecture rtl of atividade_7 is
+
+    constant CLK_FREQ_HZ      : natural := 50_000_000;
+    constant ONE_SECOND_MAX   : natural := CLK_FREQ_HZ - 1;
+    constant TIME_SHORT_SEC   : natural := 15;
+    constant TIME_LONG_SEC    : natural := 60;
+
+    function bcd_to_ssd(bcd : std_logic_vector(3 downto 0))
+        return std_logic_vector is
+    begin
+        case bcd is
+            when "0000" => return "1000000"; -- 0
+            when "0001" => return "1111001"; -- 1
+            when "0010" => return "0100100"; -- 2
+            when "0011" => return "0110000"; -- 3
+            when "0100" => return "0011001"; -- 4
+            when "0101" => return "0010010"; -- 5
+            when "0110" => return "0000010"; -- 6
+            when "0111" => return "1111000"; -- 7
+            when "1000" => return "0000000"; -- 8
+            when "1001" => return "0010000"; -- 9
+            when others => return "1111111";
+        end case;
+    end function;
+
+    function bin_to_bcd(value : natural range 0 to 9999)
+        return std_logic_vector is
+        variable bcd      : unsigned(15 downto 0) := (others => '0');
+        variable bin_work : unsigned(13 downto 0);
+    begin
+        bin_work := to_unsigned(value, bin_work'length);
+
+        for i in 0 to bin_work'length - 1 loop
+            for digit in 0 to 3 loop
+                if bcd(digit * 4 + 3 downto digit * 4) > to_unsigned(4, 4) then
+                    bcd(digit * 4 + 3 downto digit * 4) :=
+                        bcd(digit * 4 + 3 downto digit * 4) + to_unsigned(3, 4);
+                end if;
+            end loop;
+
+            bcd := bcd sll 1;
+            bcd(0) := bin_work(bin_work'high);
+            bin_work := bin_work sll 1;
+        end loop;
+
+        return std_logic_vector(bcd);
+    end function;
+
+    signal second_counter : natural range 0 to ONE_SECOND_MAX := 0;
+    signal current_time   : natural range 0 to 9999 := TIME_SHORT_SEC;
+    signal reload_pending : std_logic := '1';
+    signal bcd_value      : std_logic_vector(15 downto 0);
+
+begin
+
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            second_counter <= 0;
+            current_time   <= TIME_SHORT_SEC;
+            reload_pending <= '1';
+            led_end        <= '0';
+        elsif rising_edge(clk) then
+            if reload_pending = '1' then
+                second_counter <= 0;
+                reload_pending <= '0';
+                led_end        <= '0';
+
+                if time_sel = '1' then
+                    current_time <= TIME_LONG_SEC;
+                else
+                    current_time <= TIME_SHORT_SEC;
+                end if;
+            elsif pause_n = '1' then
+                if current_time > 0 then
+                    led_end <= '0';
+
+                    if second_counter = ONE_SECOND_MAX then
+                        second_counter <= 0;
+                        current_time   <= current_time - 1;
+                    else
+                        second_counter <= second_counter + 1;
+                    end if;
+                else
+                    second_counter <= 0;
+                    led_end        <= '1';
+                end if;
+            end if;
+        end if;
+    end process;
+
+    bcd_value <= bin_to_bcd(current_time);
+
+    hex0 <= bcd_to_ssd(bcd_value(3 downto 0));
+    hex1 <= bcd_to_ssd(bcd_value(7 downto 4));
+    hex2 <= bcd_to_ssd(bcd_value(11 downto 8));
+    hex3 <= bcd_to_ssd(bcd_value(15 downto 12));
+
+end architecture rtl;
+\end{lstlisting}
+
+\end{document}

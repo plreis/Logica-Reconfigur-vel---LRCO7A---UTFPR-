@@ -1,0 +1,14 @@
+#
+#
+# Quartus Prime
+# Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
+# Date created = 08:20:58  May 21, 2026
+#
+# -------------------------------------------------------------------------- #
+
+QUARTUS_VERSION = "25.1"
+DATE = "08:20:58  May 21, 2026"
+
+# Revisions
+
+PROJECT_REVISION = "atividade6"

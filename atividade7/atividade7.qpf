@@ -1,0 +1,10 @@
+#
+# Quartus Prime
+#
+
+QUARTUS_VERSION = "25.1"
+DATE = "10:00:00  May 31, 2026"
+
+# Revisions
+
+PROJECT_REVISION = "atividade7"

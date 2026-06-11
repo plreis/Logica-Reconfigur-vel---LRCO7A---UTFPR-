@@ -1,0 +1,290 @@
+%%% Relatorio Tecnico - Atividade 8 - UTFPR
+%%% Maquina de estados em VHDL
+
+\documentclass[12pt,a4paper, brazil]{article}
+
+%%%%%%% INFORMACOES DO CABECALHO
+\newcommand{\workingDate}{\textsc{\selectlanguage{portuguese}\today}}
+\newcommand{\userName}{LRCO7A}
+\newcommand{\institution}{UTFPR-AP}
+\usepackage{researchdiary_png}
+
+\usepackage{listings}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{booktabs}
+
+\lstdefinestyle{vhdl}{
+    language=VHDL,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    frame=single,
+    breaklines=true,
+    captionpos=b,
+    tabsize=2,
+    inputencoding=utf8,
+    extendedchars=true,
+    literate=
+        {á}{{\'a}}1 {à}{{\`a}}1 {â}{{\^a}}1 {ã}{{\~a}}1
+        {é}{{\'e}}1 {ê}{{\^e}}1
+        {í}{{\'i}}1
+        {ó}{{\'o}}1 {ô}{{\^o}}1 {õ}{{\~o}}1
+        {ú}{{\'u}}1
+        {ç}{{\c{c}}}1
+        {Á}{{\'A}}1 {À}{{\`A}}1 {Â}{{\^A}}1 {Ã}{{\~A}}1
+        {É}{{\'E}}1 {Ê}{{\^E}}1
+        {Í}{{\'I}}1
+        {Ó}{{\'O}}1 {Ô}{{\^O}}1 {Õ}{{\~O}}1
+        {Ú}{{\'U}}1
+        {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\begin{center}
+{\textbf {\huge Atividade Prática 8 -- Máquina de Estados}}\\[5mm]
+{\large Pedro Lucas dos Reis Silva - RA: 2272040} \\[5mm]
+{\large Lucas dos Reis Viana - RA: 2321645} \\[5mm]
+\today\\[5mm]
+\end{center}
+
+% ============================================================
+\section{Introdução}
+% ============================================================
+
+Esta atividade consiste na implementação, em VHDL, de um controlador para quatro LEDs de um acessório luminoso com dois chifres. O circuito possui dois LEDs do lado direito, \texttt{R1} e \texttt{R2}, e dois LEDs do lado esquerdo, \texttt{L1} e \texttt{L2}. A proposta é controlar esses LEDs por meio de modos de operação selecionados por botão, com opção de pausa, reset e duas velocidades de animação.
+
+Os conceitos novos utilizados foram:
+
+\begin{itemize}
+    \item \textbf{Máquina de estados}: estrutura usada para alternar entre os modos \texttt{ACESO}, \texttt{INTERMITENTE}, \texttt{ALTERNADO} e \texttt{SEQUENCIAL};
+    \item \textbf{Máquina de Moore}: as saídas dos LEDs dependem do estado atual e do subestado da animação;
+    \item \textbf{Detecção de borda}: recurso usado para que o botão de troca de modo avance apenas uma vez por pressionamento;
+    \item \textbf{Temporização síncrona}: contador acionado pelo clock de 50 MHz para controlar a velocidade dos modos animados.
+\end{itemize}
+
+% ============================================================
+\section{Desenvolvimento}
+% ============================================================
+
+\subsection{Arquivos do Projeto}
+
+O projeto foi organizado nos seguintes arquivos:
+
+\begin{itemize}
+    \item \texttt{corsimcornao.vhd}: contém a entidade principal e a lógica da máquina de estados;
+    \item \texttt{atividade8.qpf}: arquivo de projeto do Quartus Prime;
+    \item \texttt{atividade8.qsf}: arquivo de configurações do Quartus, incluindo o dispositivo, a entidade de topo, o arquivo VHDL e a pinagem da placa.
+\end{itemize}
+
+A entidade principal do projeto é \texttt{corsimcornao}. O projeto utiliza o dispositivo \texttt{10M50DAF484C7G}, da família MAX 10, presente na placa DE10-Lite.
+
+\subsection{Entradas e Saídas}
+
+A entidade \texttt{corsimcornao} possui as seguintes portas:
+
+\begin{itemize}
+    \item \texttt{clk}: entrada de clock de 50 MHz da placa;
+    \item \texttt{rst\_n}: entrada de reset assíncrono, ativa em nível baixo, conectada ao botão \texttt{KEY0};
+    \item \texttt{mode\_btn\_n}: entrada de troca de modo, ativa em nível baixo, conectada ao botão \texttt{KEY1};
+    \item \texttt{enable}: entrada de habilitação, conectada à chave \texttt{SW0};
+    \item \texttt{speed\_sel}: entrada de seleção de velocidade, conectada à chave \texttt{SW1};
+    \item \texttt{leds}: saída de 4 bits conectada aos LEDs \texttt{LEDR0} a \texttt{LEDR3}.
+\end{itemize}
+
+O vetor \texttt{leds} foi associado aos LEDs do acessório na ordem \texttt{leds(0)=R1}, \texttt{leds(1)=R2}, \texttt{leds(2)=L1} e \texttt{leds(3)=L2}.
+
+\subsection{Funcionamento Lógico}
+
+A máquina principal possui quatro estados. No estado \texttt{ACESO}, todos os LEDs permanecem ligados. No estado \texttt{INTERMITENTE}, os LEDs internos de cada chifre alternam entre os padrões \texttt{0101} e \texttt{1010}. No estado \texttt{ALTERNADO}, os lados direito e esquerdo piscam alternadamente com os padrões \texttt{0011} e \texttt{1100}. No estado \texttt{SEQUENCIAL}, apenas um LED fica aceso por vez, seguindo a ordem \texttt{R1}, \texttt{R2}, \texttt{L1} e \texttt{L2}.
+
+O botão \texttt{KEY1} é ativo em nível baixo, por isso a troca de modo ocorre na borda de descida do sinal \texttt{mode\_btn\_n}. O sinal anterior do botão é armazenado em \texttt{mode\_btn\_reg}, permitindo identificar a transição de \texttt{'1'} para \texttt{'0'}.
+
+A animação é controlada pelo sinal \texttt{sub\_estado}, que varia de 0 a 3. Esse subestado é incrementado pelo temporizador quando \texttt{enable} está em nível alto. Quando \texttt{enable} está em nível baixo, o temporizador deixa de avançar e o circuito permanece pausado no padrão atual.
+
+A chave \texttt{speed\_sel} define o limite do temporizador. Com \texttt{speed\_sel = '0'}, o limite é \texttt{F\_CLK/2}, resultando em uma troca aproximadamente a cada 0,5 s. Com \texttt{speed\_sel = '1'}, o limite é \texttt{F\_CLK/10}, resultando em uma troca aproximadamente a cada 0,1 s.
+
+\subsection{Implementação na Placa DE10-Lite}
+
+Na implementação física, o circuito utiliza o clock de 50 MHz, os botões \texttt{KEY0} e \texttt{KEY1}, as chaves \texttt{SW0} e \texttt{SW1} e os LEDs \texttt{LEDR0} a \texttt{LEDR3}. A Tabela~\ref{tab:pinagem} apresenta as atribuições definidas no arquivo \texttt{atividade8.qsf}.
+
+\begin{table}[H]
+\centering
+\caption{Pinagem da máquina de estados na placa DE10-Lite.}
+\label{tab:pinagem}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Recurso} & \textbf{Sinal VHDL} & \textbf{Função} & \textbf{Pino} \\
+\midrule
+\texttt{MAX10\_CLK1\_50} & \texttt{clk}          & clock de 50 MHz       & \texttt{PIN\_P11} \\
+\texttt{KEY0}            & \texttt{rst\_n}       & reset assíncrono      & \texttt{PIN\_B8}  \\
+\texttt{KEY1}            & \texttt{mode\_btn\_n} & troca de modo         & \texttt{PIN\_A7}  \\
+\texttt{SW0}             & \texttt{enable}       & habilitação e pausa   & \texttt{PIN\_C10} \\
+\texttt{SW1}             & \texttt{speed\_sel}   & seleção de velocidade & \texttt{PIN\_C11} \\
+\texttt{LEDR0}           & \texttt{leds(0)}      & LED R1                & \texttt{PIN\_A8}  \\
+\texttt{LEDR1}           & \texttt{leds(1)}      & LED R2                & \texttt{PIN\_A9}  \\
+\texttt{LEDR2}           & \texttt{leds(2)}      & LED L1                & \texttt{PIN\_A10} \\
+\texttt{LEDR3}           & \texttt{leds(3)}      & LED L2                & \texttt{PIN\_B10} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+
+% ============================================================
+\section{Simulação}
+% ============================================================
+
+A simulação gate-level apresenta o comportamento dos sinais \texttt{clk}, \texttt{rst\_n}, \texttt{mode\_btn\_n}, \texttt{enable}, \texttt{speed\_sel} e \texttt{leds}. O reset leva o circuito ao modo \texttt{ACESO}, e os acionamentos do botão percorrem os estados \texttt{INTERMITENTE}, \texttt{ALTERNADO}, \texttt{SEQUENCIAL} e novamente \texttt{ACESO}. Na saída, são observados os padrões \texttt{1111}, \texttt{0101}, \texttt{0011}, \texttt{0001} e \texttt{1111}, confirmando as transições da máquina de estados.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{simulacao.png}
+    \caption{Simulação gate-level da máquina de estados \texttt{corsimcornao}.}
+    \label{fig:simulacao}
+\end{figure}
+\FloatBarrier
+
+% ============================================================
+\section{Diagrama RTL}
+% ============================================================
+
+O diagrama RTL gerado pelo Quartus Prime representa a entidade \texttt{corsimcornao} e a lógica sequencial responsável pelo registro do modo atual, pelo temporizador, pelo subestado da animação e pela detecção de borda do botão. A lógica combinacional associada seleciona o próximo modo de operação e define o padrão de saída aplicado ao vetor \texttt{leds}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{rtl.png}
+    \caption{Diagrama RTL da máquina de estados \texttt{corsimcornao}.}
+    \label{fig:rtl}
+\end{figure}
+\FloatBarrier
+
+% ============================================================
+\section{Considerações Finais}
+% ============================================================
+
+A atividade permitiu implementar um controlador de LEDs baseado em máquina de estados finita. A solução alterna entre quatro modos de operação, utiliza um botão para mudança de modo, possui reset ativo em nível baixo, pausa por \texttt{enable} e duas velocidades selecionáveis por chave. O circuito foi descrito de forma síncrona, com separação entre registradores de estado, temporização e lógica de saída.
+
+% ============================================================
+\appendix
+% ============================================================
+
+\newpage
+\section{Código VHDL -- Entidade \texttt{corsimcornao}}
+\label{ap:codigo-top}
+
+\begin{lstlisting}[style=vhdl, caption={Arquivo \texttt{corsimcornao.vhd}.}]
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity corsimcornao is
+    generic (
+        F_CLK : integer := 50_000_000
+    );
+    port (
+        clk        : in  std_logic;
+        rst_n      : in  std_logic;
+        mode_btn_n : in  std_logic;
+        enable     : in  std_logic;
+        speed_sel  : in  std_logic;
+        leds       : out std_logic_vector(3 downto 0)
+    );
+end entity;
+
+architecture comportamento of corsimcornao is
+    type modo_type is (ACESO, INTERMITENTE, ALTERNADO, SEQUENCIAL);
+
+    signal modo_atual  : modo_type;
+    signal proximo_modo: modo_type;
+    signal timer       : integer range 0 to F_CLK := 0;
+    signal limite_timer: integer;
+    signal mode_btn_reg: std_logic;
+    signal sub_estado  : integer range 0 to 3 := 0;
+begin
+    limite_timer <= F_CLK / 2 when speed_sel = '0' else F_CLK / 10;
+
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            modo_atual <= ACESO;
+            mode_btn_reg <= '1';
+        elsif rising_edge(clk) then
+            mode_btn_reg <= mode_btn_n;
+
+            if mode_btn_reg = '1' and mode_btn_n = '0' then
+                modo_atual <= proximo_modo;
+            end if;
+        end if;
+    end process;
+
+    process(modo_atual)
+    begin
+        case modo_atual is
+            when ACESO        => proximo_modo <= INTERMITENTE;
+            when INTERMITENTE => proximo_modo <= ALTERNADO;
+            when ALTERNADO    => proximo_modo <= SEQUENCIAL;
+            when SEQUENCIAL   => proximo_modo <= ACESO;
+        end case;
+    end process;
+
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            timer <= 0;
+            sub_estado <= 0;
+        elsif rising_edge(clk) then
+            if enable = '1' then
+                if timer >= limite_timer then
+                    timer <= 0;
+
+                    if sub_estado = 3 then
+                        sub_estado <= 0;
+                    else
+                        sub_estado <= sub_estado + 1;
+                    end if;
+                else
+                    timer <= timer + 1;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    process(modo_atual, sub_estado)
+    begin
+        case modo_atual is
+            when ACESO =>
+                leds <= "1111";
+
+            when INTERMITENTE =>
+                if sub_estado mod 2 = 0 then
+                    leds <= "0101";
+                else
+                    leds <= "1010";
+                end if;
+
+            when ALTERNADO =>
+                if sub_estado mod 2 = 0 then
+                    leds <= "0011";
+                else
+                    leds <= "1100";
+                end if;
+
+            when SEQUENCIAL =>
+                case sub_estado is
+                    when 0      => leds <= "0001";
+                    when 1      => leds <= "0010";
+                    when 2      => leds <= "0100";
+                    when 3      => leds <= "1000";
+                    when others => leds <= "0000";
+                end case;
+        end case;
+    end process;
+end architecture;
+\end{lstlisting}
+
+\end{document}
